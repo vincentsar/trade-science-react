@@ -23,6 +23,10 @@ CORS(app)
 def main():
     return { "members": ["Member2", "Member1", "Member3"] }
 
+@app.route("/members")
+def members():
+    return { "members": ["Member2", "Member1", "Member3"] }
+
 @app.route("/assets")
 def assets():
     return jsonAssets()

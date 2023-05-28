@@ -30,7 +30,7 @@ const pxDomainYPadding = 5;
 
 const pxChartPadding = 40;
 const pxChartBetweenPadding = 5;
-const remChartFontSize = "8rem";
+const remChartFontSize = "8";
 
 const pxChartCandleHeight = 600;
 const pxChartVolumeHeight = 200;

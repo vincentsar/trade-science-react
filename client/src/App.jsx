@@ -1,27 +1,29 @@
 import { useState, useEffect } from "react";
 import ScrollCandleChart from "@/components/ScrollCandleChart";
 import FlexBetween from "@/layouts/FlexBetween";
-// import MemberList from "./components/MemberList";
+import Sidenav from "@/scenes/global/Sidenav";
 
 const App = () => {
-  const [data, setData] = useState([]);
+  const [assetData, setAssetData] = useState([]);
+  const [selectedSymbol, setSelectedSymbol] = useState(null);
 
-  // useEffect(() => {
-  //   fetch("members")
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       setData(data);
-  //       console.log(data);
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error fetching data:", error);
-  //     });
-  // }, []);
+  console.log("selectedSymbol", selectedSymbol);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:6050/assets")
+      .then((res) => res.json())
+      .then((data) => {
+        setAssetData(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  }, []);
 
   return (
     <div>
-      {/* <MemberList data={data} /> */}
       <FlexBetween>
+        <Sidenav data={assetData} onItemSelect={setSelectedSymbol} />
         <ScrollCandleChart />
         <ScrollCandleChart />
       </FlexBetween>

@@ -13,6 +13,7 @@
     "@mui/material": "^5.13.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-pro-sidebar": "^1.1.0-alpha.1",
     "victory": "^36.6.10"
   },
   "devDependencies": {
