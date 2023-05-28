@@ -1,20 +1,22 @@
-import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
-import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
-import { useState } from "react";
+import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import PropTypes from "prop-types";
 import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
+import { useState } from "react";
 
 export default function Sidenav({ data, onItemSelect }) {
-  const [open, setopen] = useState(true);
-  const toggleOpen = () => {
-    setopen(!open);
-  };
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      <Sidebar className="app">
+      <Sidebar className="app" collapsed={isCollapsed}>
         <Menu>
-          <MenuItem className="menu1">
+          <MenuItem
+            className="menu1"
+            onClick={() => {
+              setIsCollapsed(!isCollapsed);
+              console.log(isCollapsed);
+            }}
+          >
             <h5>TRADE WITH SCIENCE</h5>
           </MenuItem>
           {Object.keys(data).map((key) => (

@@ -7,8 +7,6 @@ const App = () => {
   const [assetData, setAssetData] = useState([]);
   const [selectedSymbol, setSelectedSymbol] = useState(null);
 
-  console.log("selectedSymbol", selectedSymbol);
-
   useEffect(() => {
     fetch("http://127.0.0.1:6050/assets")
       .then((res) => res.json())

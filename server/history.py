@@ -105,6 +105,10 @@ def initializeDBTable():
     return cur, conn
 
 def slotDBData(df, cur):
+    # There's a case where ticker 'True' got interpreted as Boolean
+    if df.at[0, 'symbol'] == True:
+        df['symbol'] = df['symbol'].astype(str)
+
     # Adding the stock bars to database
     data = [(df.at[i, 'exchange'], df.at[i, 'symbol'], df.at[i, 'timestamp'], 
              df.at[i, 'open'], df.at[i, 'high'], df.at[i, 'low'], df.at[i, 'close'], 
@@ -195,13 +199,13 @@ if __name__ == "__main__":
         if exchange in EXCHANGE_SKIP: continue
 
         # Generate the require directory and file name
-        csv_file_path = os.path.join(DIR_DATA, DIR_SUB_DATA, exchange, f"{symbol}.csv")
+        csv_file_path = os.path.join(DIR_DATA, DIR_SUB_DATA, exchange, f"{symbol.replace('/', '-')}.csv")
         os.makedirs(os.path.join(DIR_DATA, DIR_SUB_DATA, exchange), exist_ok=True)
 
         # This is for a loading of CSV data into database
         if DB_INITIALIZE_FROM_CSV:
-            if idx <= 3642: continue  # For a fast skip if I'm continuing from somewhere
-            if not os.file.exists(csv_file_path): continue  # Skip if CSV doesn't exist
+            if idx < 7211: continue  # For a fast skip if I'm continuing from somewhere
+            if not os.path.exists(csv_file_path): continue  # Skip if CSV doesn't exist
             df = pd.read_csv(csv_file_path)
             df["exchange"] = [exchange] * len(df)
             print(f"{idx} CSV: Adding {symbol} into database")

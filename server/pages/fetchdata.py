@@ -18,6 +18,8 @@ def jsonAssets(pickle_dir='tradable_assets.pkl'):
     for asset in tradable_assets:
         symbol = asset['symbol']
         exchange = asset['exchange']
+        if exchange == 'OTC':
+            continue
         
         # Format in our dictionary
         if exchange not in json_asset:
