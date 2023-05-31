@@ -1,14 +1,10 @@
-from dotenv import load_dotenv
-import os
+import os 
 import pickle
+from datatools.constant import *
 
-###################### SETUP ######################
-load_dotenv()
-DIR_DATA = str(os.getenv('DIR_DATA'))
-DIR_SUB_DATA = str(os.getenv('DIR_SUB_DATA'))
-
-###################### FUNCTION ######################
+###################### FRONT-END RELATED FUNCTION ######################
 def jsonAssets(pickle_dir='tradable_assets.pkl'):
+    global DIR_DATA, DIR_SUB_DATA
     pickle_file_path = os.path.join(DIR_DATA, DIR_SUB_DATA, pickle_dir)
     with open(pickle_file_path, 'rb') as f:
         tradable_assets = pickle.load(f)

@@ -2,7 +2,7 @@ from flask_cors import CORS
 from flask import Flask
 
 from dotenv import load_dotenv
-from pages.fetchdata import *
+from datatools.fetchdata import *
 
 '''
 Run script to enable csv data fetching into local server for front end web app.
