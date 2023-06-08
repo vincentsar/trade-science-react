@@ -122,7 +122,7 @@ def alpacaGetMaxRequestAssets(stock_client, crypto_client, exchangesymbols, star
 
 ###################### DATABASE FUNCTIONS ######################
 def dbGetUniqueLatestDates(cur, exchanges, symbols, print_dates=False):
-    global DB_TABLE_NAME
+    global DB_MAIN_TABLE
 
     newsymbols = []
     stock_latest_dates = {}
@@ -131,7 +131,7 @@ def dbGetUniqueLatestDates(cur, exchanges, symbols, print_dates=False):
         exchange = exchanges[idx]
         cur.execute(f"""
             SELECT MAX(timestamp) 
-            FROM {DB_TABLE_NAME} 
+            FROM {DB_MAIN_TABLE} 
             WHERE exchange = %s AND symbol = %s
         """, (exchange, symbol))
         

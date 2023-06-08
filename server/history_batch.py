@@ -37,7 +37,7 @@ if __name__ == "__main__":
     DB_PASSWORD = str(os.getenv('DB_PASSWORD'))
     DB_HOST = str(os.getenv('DB_HOST'))
     DB_PORT = str(os.getenv('DB_PORT'))
-    DB_TABLE_NAME = str(os.getenv('DB_TABLE_NAME'))
+    DB_MAIN_TABLE = str(os.getenv('DB_MAIN_TABLE'))
 
     # Define the start and end dates for the historical data
     LAST_TRADING_DATE = csvGetLastWeekday()
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         df = bars.df.copy()
         df = df.reset_index()
         df["exchange"] = [exchange] * len(df)
-        dbSlotData(df, cur, conn)
+        dbSlotDataOHLC(df, cur, conn)
 
         # Save to CSV
         csv_file_path = os.path.join(DIR_DATA, DIR_SUB_DATA, exchange, f"{symbol.replace('/', '-')}.csv")
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
             # Slot into DB
             df = dfProcessDBStorage(bars.df.copy(), dict_exchanges)
-            dbSlotData(df, cur, conn)
+            dbSlotDataOHLC(df, cur, conn)
 
             # Store into relevant CSVs
             dfGroupStoreCSVs(df)
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
             # Slot into DB
             df = dfProcessDBStorage(bars.df.copy(), dict_exchanges)
-            dbSlotData(df, cur, conn)
+            dbSlotDataOHLC(df, cur, conn)
 
             # Store into relevant CSVs
             dfGroupStoreCSVs(df)

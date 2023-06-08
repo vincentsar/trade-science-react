@@ -39,7 +39,7 @@ if __name__ == "__main__":
     DB_PASSWORD = str(os.getenv('DB_PASSWORD'))
     DB_HOST = str(os.getenv('DB_HOST'))
     DB_PORT = str(os.getenv('DB_PORT'))
-    DB_TABLE_NAME = str(os.getenv('DB_TABLE_NAME'))
+    DB_MAIN_TABLE = str(os.getenv('DB_MAIN_TABLE'))
 
     # Define the start and end dates for the historical data
     LAST_STOCK_TRADING_DATE = csvGetLastWeekday()
@@ -77,7 +77,7 @@ if __name__ == "__main__":
             df = pd.read_csv(csv_file_path)
             df["exchange"] = [exchange] * len(df)
             print(f"{idx} CSV: Adding {symbol} into database")
-            dbSlotData(df, cur, conn)
+            dbSlotDataOHLC(df, cur, conn)
             continue  # Initialize from CSV = won't load from internet
 
         # Get the latest date to load from
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         df = bars.df.copy()
         df = df.reset_index()
         df["exchange"] = [exchange] * len(df)
-        dbSlotData(df, cur)
+        dbSlotDataOHLC(df, cur)
 
         # Save to CSV
         bars.df.to_csv(csv_file_path, mode='a', header=not os.path.exists(csv_file_path))

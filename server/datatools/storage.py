@@ -6,9 +6,8 @@ import os
 from datatools.constant import *
 
 ###################### DATABASE RELATED FUNCTIONS ######################
-def dbInitializeTable():
-    global DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_TABLE_NAME
-
+##### DB INITIALIATION FUNCTIONS #####
+def dbInitializeTable(table=DB_MAIN_TABLE):
     # Connect to your postgres DB
     conn = psycopg2.connect(
         dbname=DB_NAME,
@@ -20,14 +19,14 @@ def dbInitializeTable():
     # Open a cursor to perform database operations
     cur = conn.cursor()
 
-    cur.execute(f"SELECT EXISTS(SELECT FROM pg_tables WHERE tablename = '{DB_TABLE_NAME}')")
+    cur.execute(f"SELECT EXISTS(SELECT FROM pg_tables WHERE tablename = '{table}')")
     exists = cur.fetchone()[0]
 
     # Execute a command: this creates a new table
     if not exists:
-        print(f"No table found in Database, creating table {DB_TABLE_NAME}")
+        print(f"No table found in Database, creating table {table}")
         cur.execute(f"""
-            CREATE TABLE {DB_TABLE_NAME} (
+            CREATE TABLE {table} (
                 exchange TEXT NOT NULL,
                 symbol TEXT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
@@ -47,9 +46,18 @@ def dbInitializeTable():
 
     return cur, conn
 
-def dbSlotData(df, cur, conn):
-    global DB_TABLE_NAME
-    
+##### DB SLOTTING FUNCTIONS #####
+def dbSlotColumns(cur, conn, table, column_dict):
+    # Iterate over your new columns
+    for k, v in column_dict.items():
+        # Add this column to the database table
+        cur.execute(f"ALTER TABLE {table} ADD COLUMN {k} {v}")
+        print(f"Added column {k} {v} to {table}")
+
+    # Commit the changes
+    conn.commit()
+
+def dbSlotDataOHLC(df, cur, conn, table=DB_MAIN_TABLE):
     # There's a case where ticker 'True' got interpreted as Boolean
     if df.at[0, 'symbol'] == True:
         df['symbol'] = df['symbol'].astype(str)
@@ -60,7 +68,7 @@ def dbSlotData(df, cur, conn):
              df.at[i, 'volume'], df.at[i, 'trade_count'], df.at[i, 'vwap'])
             for i in df.index]
     query = f"""
-        INSERT INTO {DB_TABLE_NAME} (exchange, symbol, timestamp, open, high, low, close, volume, trade_count, vwap)
+        INSERT INTO {table} (exchange, symbol, timestamp, open, high, low, close, volume, trade_count, vwap)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (exchange, symbol, timestamp) DO NOTHING
     """
@@ -72,8 +80,73 @@ def dbSlotData(df, cur, conn):
     except Exception as e:
         conn.rollback()  # If error, rollback to BEGIN
         raise ValueError(f"An error occurred: {e}")
-    
+
+def dbSlotDataDynamic(df, cur, conn, table=DB_MAIN_TABLE):
+    # There's a case where ticker 'True' got interpreted as Boolean
+    if df.at[0, 'symbol'] == True:
+        df['symbol'] = df['symbol'].astype(str)
+
+    # Generate the column names and placeholders for the SQL statement
+    cols = ", ".join(df.columns)
+    placeholders = ", ".join(["%s"] * len(df.columns))
+
+    # Prepare the data for insertion
+    data = [tuple(row) for row in df.values]
+
+    # Generate the SQL statement
+    query = f"""
+        INSERT INTO {table} ({cols})
+        VALUES ({placeholders})
+        ON CONFLICT (exchange, symbol, timestamp) DO NOTHING
+    """
+
+    # Execute the SQL statement
+    cur.executemany(query, data)
+
+    # Attempt to commit data
+    try:
+        conn.commit()
+    except Exception as e:
+        conn.rollback()  # If error, rollback to BEGIN
+        raise ValueError(f"An error occurred: {e}")
+
+##### DB FETCHING FUNCTIONS #####
+def dbGetColumns(cur, conn, table):
+    cur.execute(f"SELECT * FROM {table} LIMIT 0")
+    return [desc[0] for desc in cur.description]
+
+def dbGetUniqueData(cur, conn, table, command="exchange, symbol"):
+    sql_query = f"SELECT DISTINCT {command} FROM {table}"
+    cur.execute(sql_query)
+    unique_pairs = cur.fetchall()
+
+    return unique_pairs
+
+def dbGetDataWhere(cur, conn, table, where, datafetch="*"):
+    sql_query = f"SELECT {datafetch} FROM {table} WHERE {where}"
+    df = pd.read_sql_query(sql_query, conn)
+    return df
+
 ###################### DF FORMATTING RELATED FUNCTIONS ######################
+def dfInferColumnDBTypes(df):
+    # Define a mapping from pandas data types to SQL data types
+    type_mapping = {
+        'bool': 'BOOLEAN',
+        'int64': 'NUMERIC',
+        'float64': 'NUMERIC',
+        'datetime64[ns]': 'TIMESTAMP',
+        'object': 'TEXT',
+    }
+
+    # Get the pandas data type of each column
+    pandas_types = df.dtypes
+
+    # Map the pandas data types to SQL data types
+    sql_types = {column: type_mapping[str(pandas_type)]
+                 for column, pandas_type in pandas_types.items()}
+
+    return sql_types
+
 def dfProcessDBStorage(df, dict_exchanges):
     df = df.reset_index()
     df["exchange"] = df['symbol'].map(dict_exchanges)
