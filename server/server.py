@@ -3,6 +3,7 @@ from flask import Flask
 
 from dotenv import load_dotenv
 from datatools.fetchdata import *
+from datatools.frontend import *
 
 '''
 Run script to enable csv data fetching into local server for front end web app.

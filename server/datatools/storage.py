@@ -6,7 +6,7 @@ import os
 from datatools.constant import *
 
 ###################### DATABASE RELATED FUNCTIONS ######################
-def initializeDBTable():
+def dbInitializeTable():
     global DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_TABLE_NAME
 
     # Connect to your postgres DB
@@ -47,7 +47,7 @@ def initializeDBTable():
 
     return cur, conn
 
-def slotDBData(df, cur, conn):
+def dbSlotData(df, cur, conn):
     global DB_TABLE_NAME
     
     # There's a case where ticker 'True' got interpreted as Boolean
@@ -73,8 +73,46 @@ def slotDBData(df, cur, conn):
         conn.rollback()  # If error, rollback to BEGIN
         raise ValueError(f"An error occurred: {e}")
     
+###################### DF FORMATTING RELATED FUNCTIONS ######################
+def dfProcessDBStorage(df, dict_exchanges):
+    df = df.reset_index()
+    df["exchange"] = df['symbol'].map(dict_exchanges)
+    return df
+
+def dfGroupStoreCSVs(df):
+    # Save to CSV
+    grouped_exchange = df.groupby('exchange')
+    for exchange, exchange_df in grouped_exchange:
+        grouped_symbol = exchange_df.groupby('symbol')
+        for symbol, symbol_df in grouped_symbol:
+            csv_file_path = os.path.join(DIR_DATA, DIR_SUB_DATA, exchange, f"{symbol.replace('/', '-')}.csv")
+            print(f"Storing to CSV: {csv_file_path}")
+            symbol_df = symbol_df.drop(columns=['exchange'])
+            symbol_df.to_csv(csv_file_path, mode='a', header=not os.path.exists(csv_file_path), index=False)
+            pass
 
 ###################### CSV RELATED FUNCTIONS ######################
+def csvGetSkipSymbols(csv_file_path = os.path.join(DIR_DATA, DIR_SUB_DATA, "skip_symbols.csv")):
+    import csv 
+    with open(csv_file_path, 'r') as f:
+        reader = csv.reader(f)
+        data = [tuple(row) for row in reader]
+    return data
+
+def csvAddSkipSymbols(data, csv_file_path = os.path.join(DIR_DATA, DIR_SUB_DATA, "skip_symbols.csv")):
+    import csv     
+    with open(csv_file_path, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(data)
+
+def csvRemovePastDate(csv_file_path, date, date_column_name="timestamp", csv_date_format='%Y-%m-%d %H:%M:%S%z'):
+    # Remove all rows where column timestamp exceeded the date
+    df = pd.read_csv(csv_file_path)
+    df[date_column_name] = pd.to_datetime(df[date_column_name], format=csv_date_format)
+    df = df[df[date_column_name] < date]
+    df.to_csv(csv_file_path, index=False)
+    print(f"{os.path.basename(csv_file_path)}: Keeping only rows where {date_column_name} is below {date}")
+
 def csvGetLatestDate(csv_file_path, csv_date_format='%Y-%m-%d %H:%M:%S%z'):
     # Check if the CSV file exists
     if os.path.exists(csv_file_path):

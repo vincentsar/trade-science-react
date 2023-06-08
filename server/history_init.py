@@ -20,12 +20,8 @@ from datatools.fetchdata import *
 from datatools.storage import *
 
 ###################### SETUP ######################
-# Store into DB when fetch from internet
-DB_STORE_DATA = True
-
 # Take CSV to DB [If ran, it doesn't fetch from internet to CSV]
 DB_INITIALIZE_FROM_CSV = True
-if DB_INITIALIZE_FROM_CSV: DB_STORE_DATA = True
 
 if __name__ == "__main__":
     ############################## LOAD VARIABLES ##############################
@@ -37,32 +33,32 @@ if __name__ == "__main__":
     API_SECRET = str(os.getenv('API_SECRET'))
     BASE_URL = 'https://paper-api.alpaca.markets'  # Use this URL for paper trading
 
-    if DB_STORE_DATA:
-        DB_USER = str(os.getenv('DB_USER'))
-        DB_NAME = str(os.getenv('DB_NAME'))
-        DB_PASSWORD = str(os.getenv('DB_PASSWORD'))
-        DB_HOST = str(os.getenv('DB_HOST'))
-        DB_PORT = str(os.getenv('DB_PORT'))
-        DB_TABLE_NAME = str(os.getenv('DB_TABLE_NAME'))
+    # Database Variables
+    DB_USER = str(os.getenv('DB_USER'))
+    DB_NAME = str(os.getenv('DB_NAME'))
+    DB_PASSWORD = str(os.getenv('DB_PASSWORD'))
+    DB_HOST = str(os.getenv('DB_HOST'))
+    DB_PORT = str(os.getenv('DB_PORT'))
+    DB_TABLE_NAME = str(os.getenv('DB_TABLE_NAME'))
 
     # Define the start and end dates for the historical data
-    LAST_TRADING_DATE = csvGetLastWeekday()
+    LAST_STOCK_TRADING_DATE = csvGetLastWeekday()
     END_DATE = datetime.utcnow() - timedelta(minutes=15)
     START_DATE = END_DATE - timedelta(days=365 * 7)  # Max allowed duration = 7 years
 
     ############################## ALPACA INSTANCE SETUPS ##############################
     # Get tradable assets and store them
-    grouped_assets, tradable_assets = alpacaLoadTradableAssets(API_KEY, API_SECRET, True)
+    tupleSkipCSV = csvGetSkipSymbols()
+    grouped_assets, tradable_assets = alpacaLoadTradableAssets(API_KEY, API_SECRET, skipCSVData=tupleSkipCSV, groupAssets=True)
 
     # Some alpaca class objects
     timeframe = TimeFrame(1, TimeFrameUnit.Day)  # Define a daily timeframe
     stock_client = StockHistoricalDataClient(API_KEY, API_SECRET)
     crypto_client = CryptoHistoricalDataClient(API_KEY, API_SECRET)
     
-    # Initiate database connection - if we using database
-    if DB_STORE_DATA: 
-        cur, conn = initializeDBTable()
-        cur.execute("BEGIN")  # Set a rollback point
+    # Initiate database connection
+    cur, conn = dbInitializeTable()
+    cur.execute("BEGIN")  # Set a rollback point
 
     ############################## LOOP AND STORE DATA ##############################
     for idx, asset in enumerate(tradable_assets):
@@ -81,7 +77,7 @@ if __name__ == "__main__":
             df = pd.read_csv(csv_file_path)
             df["exchange"] = [exchange] * len(df)
             print(f"{idx} CSV: Adding {symbol} into database")
-            slotDBData(df, cur, conn)
+            dbSlotData(df, cur, conn)
             continue  # Initialize from CSV = won't load from internet
 
         # Get the latest date to load from
@@ -90,10 +86,15 @@ if __name__ == "__main__":
         else: curstart_date = START_DATE
 
         # If it's the same as the last trading date [i.e. script is updated, skip]
-        if csv_date and csv_date.date() == LAST_TRADING_DATE.date():
-            print(f"Skipping {symbol} as it's already up to date")
-            continue
-        
+        if exchange.lower() == "crypto":
+            if csv_date and csv_date.date() == datetime.utcnow().date()-timedelta(days=1):
+                print(f"{exchange}: Skipping {symbol} as it's already up to date")
+                continue
+        else:
+            if csv_date and csv_date.date() == LAST_STOCK_TRADING_DATE.date():
+                print(f"{exchange}: Skipping {symbol} as it's already up to date")
+                continue
+            
         # Fetch the ohlc data
         try:
             if exchange.lower() == "crypto":
@@ -121,15 +122,16 @@ if __name__ == "__main__":
             print(f"{idx} {exchange} - {symbol} error: {e}")
             continue
 
-        if DB_STORE_DATA: 
-            df = bars.df
-            df["exchange"] = [exchange] * len(df)
-            slotDBData(df, cur)
+        # Database Variables
+        df = bars.df.copy()
+        df = df.reset_index()
+        df["exchange"] = [exchange] * len(df)
+        dbSlotData(df, cur)
 
         # Save to CSV
         bars.df.to_csv(csv_file_path, mode='a', header=not os.path.exists(csv_file_path))
         pass
 
-    if DB_STORE_DATA or DB_INITIALIZE_FROM_CSV:
-        cur.close()
-        conn.close()
+    # Close DB connection
+    cur.close()
+    conn.close()

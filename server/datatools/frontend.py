@@ -22,4 +22,4 @@ def jsonAssets(pickle_dir='tradable_assets.pkl'):
             json_asset[exchange] = []
         json_asset[exchange].append(symbol)
     
-    return json_asset
+    return json_asset   
