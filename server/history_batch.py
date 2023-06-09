@@ -17,8 +17,8 @@ from alpaca.data.enums import Adjustment, DataFeed
 from alpaca.data.historical.crypto import CryptoHistoricalDataClient, CryptoFeed
 from alpaca.data.requests import CryptoBarsRequest
 
-from datatools.fetchdata import *
-from datatools.storage import *
+from datatools.getdata import *
+from datatools.storedata import *
 
 ###################### SETUP ######################
 EXCHANGE_SKIP = ['OTC']  # All OTC data can't be fetched anyway, so just skip it
