@@ -122,6 +122,7 @@ def alpacaGetMaxRequestAssets(stock_client, crypto_client, exchangesymbols, star
             print(f"Error: {e}\nReducing max_assets to {max_assets}")
 
 ###################### DATABASE FUNCTIONS ######################
+##### DB GET HISTORY FUNCTIONS #####
 def dbGetUniqueLatestDates(cur, exchanges, symbols, print_dates=False):
     global DB_MAIN_TABLE
 
@@ -165,13 +166,16 @@ def dbGetUniqueLatestDates(cur, exchanges, symbols, print_dates=False):
 
     return newsymbols, stock_latest_dates, crypto_latest_dates
 
-##### DB GET FUNCTIONS #####
+##### DB GET BACKTEST FUNCTIONS #####
 def dbGetColumns(cur, conn, table):
     cur.execute(f"SELECT * FROM {table} LIMIT 0")
     return [desc[0] for desc in cur.description]
 
-def dbGetUniqueData(cur, conn, table, command="exchange, symbol"):
-    sql_query = f"SELECT DISTINCT {command} FROM {table}"
+def dbGetUniqueData(cur, conn, table, command="exchange, symbol", where=""):
+    if not where:
+        sql_query = f"SELECT DISTINCT {command} FROM {table}"
+    else:
+        sql_query = f"SELECT DISTINCT {command} FROM {table} WHERE {where}"
     cur.execute(sql_query)
     unique_pairs = cur.fetchall()
 
