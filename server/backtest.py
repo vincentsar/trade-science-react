@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 from backtest.minervini import *
 
-from datatools.fetchdata import *
-from datatools.storage import *
+from datatools.getdata import *
+from datatools.storedata import *
 import warnings
 
 # Mute the warning of database should use SQLAlechemy

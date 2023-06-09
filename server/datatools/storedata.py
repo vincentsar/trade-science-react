@@ -110,23 +110,6 @@ def dbSlotDataDynamic(df, cur, conn, table=DB_MAIN_TABLE):
         conn.rollback()  # If error, rollback to BEGIN
         raise ValueError(f"An error occurred: {e}")
 
-##### DB FETCHING FUNCTIONS #####
-def dbGetColumns(cur, conn, table):
-    cur.execute(f"SELECT * FROM {table} LIMIT 0")
-    return [desc[0] for desc in cur.description]
-
-def dbGetUniqueData(cur, conn, table, command="exchange, symbol"):
-    sql_query = f"SELECT DISTINCT {command} FROM {table}"
-    cur.execute(sql_query)
-    unique_pairs = cur.fetchall()
-
-    return unique_pairs
-
-def dbGetDataWhere(cur, conn, table, where, datafetch="*"):
-    sql_query = f"SELECT {datafetch} FROM {table} WHERE {where}"
-    df = pd.read_sql_query(sql_query, conn)
-    return df
-
 ###################### DF FORMATTING RELATED FUNCTIONS ######################
 def dfInferColumnDBTypes(df):
     # Define a mapping from pandas data types to SQL data types

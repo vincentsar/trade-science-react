@@ -2,7 +2,7 @@ from flask_cors import CORS
 from flask import Flask
 
 from dotenv import load_dotenv
-from datatools.fetchdata import *
+from datatools.getdata import *
 from datatools.frontend import *
 
 '''

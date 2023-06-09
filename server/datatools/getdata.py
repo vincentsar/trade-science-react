@@ -1,5 +1,6 @@
 import os
 import pickle
+import pandas as pd
 from datatools.constant import *
 
 ###################### ALPACA RELATED FUNCTIONS ######################
@@ -163,6 +164,23 @@ def dbGetUniqueLatestDates(cur, exchanges, symbols, print_dates=False):
         print(f"New exchange/symbols: {newsymbols}")
 
     return newsymbols, stock_latest_dates, crypto_latest_dates
+
+##### DB GET FUNCTIONS #####
+def dbGetColumns(cur, conn, table):
+    cur.execute(f"SELECT * FROM {table} LIMIT 0")
+    return [desc[0] for desc in cur.description]
+
+def dbGetUniqueData(cur, conn, table, command="exchange, symbol"):
+    sql_query = f"SELECT DISTINCT {command} FROM {table}"
+    cur.execute(sql_query)
+    unique_pairs = cur.fetchall()
+
+    return unique_pairs
+
+def dbGetDataWhere(cur, conn, table, where, datafetch="*"):
+    sql_query = f"SELECT {datafetch} FROM {table} WHERE {where}"
+    df = pd.read_sql_query(sql_query, conn)
+    return df
 
 ###################### GENERAL FUNCTIONS ######################
 def listChunks(lst, split_amount):
