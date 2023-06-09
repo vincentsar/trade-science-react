@@ -26,7 +26,7 @@ if __name__ == "__main__":
     DB_PORT = str(os.getenv('DB_PORT'))
 
     DB_MAIN_TABLE = str(os.getenv('DB_MAIN_TABLE'))
-    DB_MINERVINI_TABLE = str(os.getenv('DB_MINERVINI_TABLE'))
+    DB_BACKTEST_TABLE = str(os.getenv('DB_MINERVINI_TABLE'))
 
     # Load the available exhange:symbol
     ori_cur, ori_conn = dbInitializeTable()
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # New table that'll store our formatted backtest data
     columns_handled = False
-    bt_cur, bt_conn = dbInitializeTable(DB_MINERVINI_TABLE)
+    bt_cur, bt_conn = dbInitializeTable(DB_BACKTEST_TABLE)
 
     # Get all csvs under each folder
     for idx, (exchange, symbol) in enumerate(exchange_symbol):
@@ -48,13 +48,14 @@ if __name__ == "__main__":
         df = dbGetDataWhere(ori_cur, ori_conn, DB_MAIN_TABLE, f"exchange = '{exchange}' AND symbol = '{symbol}'")
         minervini_df = dfSetupMinervini(df.copy()).reset_index()
         
+        # Create columns in backtest database
         if not columns_handled:
             backtest_columns = dfInferColumnDBTypes(minervini_df)
-            db_minervini_columns = dbGetColumns(bt_cur, bt_conn, DB_MINERVINI_TABLE)
+            db_minervini_columns = dbGetColumns(bt_cur, bt_conn, DB_BACKTEST_TABLE)
             new_columns = {k: v for k, v in backtest_columns.items() if k.lower() not in db_minervini_columns}
             if len(new_columns) > 0:
-                dbSlotColumns(bt_cur, bt_conn, DB_MINERVINI_TABLE, new_columns)
+                dbSlotColumns(bt_cur, bt_conn, DB_BACKTEST_TABLE, new_columns)
             columns_handled = True
 
         if not minervini_df.empty:
-            dbSlotDataDynamic(minervini_df, bt_cur, bt_conn, DB_MINERVINI_TABLE)
+            dbSlotDataDynamic(minervini_df, bt_cur, bt_conn, DB_BACKTEST_TABLE)
